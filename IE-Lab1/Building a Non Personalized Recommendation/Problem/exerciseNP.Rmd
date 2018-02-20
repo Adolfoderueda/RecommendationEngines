@@ -13,13 +13,16 @@ Import libraries
 
 ```{r}
 
+library(data.table)
+library(reshape)
+library(tidyr)
 
 ```
 
 Load the critics dataset.
 
 ```{r}
-critics = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/IE-Lab1/Data/critics.csv", sep = ",")
+critics = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/critics.csv", sep = ",")
 ```
 
 # 1) Top 5 Movies, by rating mean
@@ -143,7 +146,8 @@ ptm = proc.time()
 
 liked_most = matrix(NA, ncol = 2, nrow = 20)
 ratio = matrix(NA, ncol = 2)
-new_data = critics[critics[,21]>=4,]
+#new_data = critics[critics[,21]>=4,]
+new_data = subset(critics, is.na(critics[[2]])==FALSE)
  
 for(i in 2:ncol(critics)-1){
   x = i-1
@@ -166,25 +170,141 @@ Explore a real data set and provide non-personalized ratings. You can use the Mo
 
 # Loading the data
 
-movies_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/IE-Lab1/Data/ml-latest-small/movies.csv", sep = ",")
+movies_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/ml-latest-small/movies.csv", sep = ",")
 
-ratings_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/IE-Lab1/Data/ml-latest-small/ratings.csv", sep = ",")
+ratings_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/ml-latest-small/ratings.csv", sep = ",")
 
 # Putting both databases together
 
-data_100k = merge(ratings_100k, movies_100k, by = intersect(names(ratings_100k$movieId), names(movies_100k$movieId)))
+data_100k = merge(ratings_100k, movies_100k, by.x = 'movieId')
+data_100k$movieId = NULL
+data_100k$genres = NULL
+
+data_100k$timestamp = NULL
+
+data_100k = data_100k[-86634,]#repeated rating --> user rates the movie twice
+data_100k = spread(data = data_100k, key = title, value = rating)
+head(data_100k)
+
 
 ```
 
 
+# Exercise 1
 
+Calculate mean rating for each movie, ordered with the highest rating listed first, and plot the top 5.
 
-
-Exercise 1
 ```{r}
 
+ptm = proc.time()
+
+means_col_100 = matrix(colMeans(data_100k[-1], na.rm = TRUE))
+film_col_100 = matrix(colnames(data_100k[-1]))
+ratings_100 = cbind(means_col_100,film_col_100)
+head(ratings_100[order(ratings_100[,1], decreasing = TRUE),], n = 5)
+
+proc.time() -ptm
+
+```
+
+# Exercise 2
+
+Calculate the percentage of ratings for each movie that are 4 stars or higher. Order with the highest percentage first, and plot the top 5 movies with more high ratings distribution.
+
+```{r}
+
+ptm = proc.time()
+
+percentages = matrix(NA, ncol = 2, nrow = ncol(data_100k))
+value = matrix(NA, ncol = 2)
+
+for(i in 2:ncol(data_100k)){
+  x = i-1
+  value = cbind(c(sum(data_100k[,i]>=4, na.rm = TRUE)/sum(data_100k[,i]>0, na.rm = TRUE)),c( colnames(data_100k[i]))) 
+  percentages[x,] = value
+  
+}
+
+head(percentages[order(percentages[,1], decreasing = TRUE),], n = 5)
+
+proc.time() -ptm
+
+```
+
+# Exercise 3
+
+Count the number of ratings for each movie, order the one with most number of ratings first, submit the top 5.
+```{r}
+
+ptm = proc.time()
+
+nratings = matrix(NA, ncol = 2, nrow = ncol(data_100k))
+value = matrix(NA, ncol = 2)
+
+for(i in 2:ncol(data_100k)){
+  x = i-1
+  value = cbind(sum(data_100k[[i]]>=0, na.rm = TRUE),c(colnames(data_100k[i])))
+  nratings[x,] = value
+}
+
+# I transform nratings to transform X1(number of views) to change its format
+nratings = data.frame(nratings)
+nratings$X1 = as.numeric(as.character(nratings$X1))
+nratings = as.matrix(nratings)
+
+head(nratings[order(nratings[,1], decreasing = TRUE),], n = 5)
+
+proc.time() -ptm
+
+```
+
+# Exercise 4
+Calculate movies that most often occur with other movie. For each movie, calculate the percentage of the other movie raters who also rated that movie. Order with the highest percentage first, and submit the top 5. Use the (x+y)/x method.
+
+We will select Bottle Rocket as default. 
+
+```{r}
+
+ptm = proc.time()
+
+preferences = matrix(NA, ncol = 2, nrow = nrow(data_100k))
+ratio = matrix(NA, ncol = 2)
+
+for(i in 3:nrow(data_100k)){
+  x = i-1
+  ratio = cbind(sum((is.na(data_100k[[i]])==FALSE) & (is.na(data_100k[[2]])==FALSE), na.rm = TRUE)/sum(((is.na(data_100k[[2]])==FALSE))), c(colnames(data_100k[i])))
+  preferences[x,] = ratio
+}
+
+head(preferences[order(preferences[,1], decreasing = TRUE),], n = 5)
+
+proc.time() -ptm
 
 
+```
+
+# Exercise 5
+Calculate the movies better rated of people who liked a movie. Select the people who liked the movie "Forrest Gump (1994)" (4 or 5 stars for the last movie on the dataset) and provide the top 5 movies they liked most.
+
+```{r}
+
+ptm = proc.time()
+
+liked_most = matrix(NA, ncol = 2, nrow = ncol(data_100k))
+ratio = matrix(NA, ncol = 2)
+new_data = data_100k[data_100k$`Forrest Gump (1994)`>=4,]
+#new_data = subset(data_100k, is.na(data_100k[[ncol(data_100k)]])==FALSE)
+ 
+for(i in 2:ncol(data_100k)){
+  x = i-1
+  ratio = cbind(mean(new_data[,i], na.rm = TRUE), colnames(new_data[i]))
+  liked_most[x,] = ratio
+}
+
+liked_most = liked_most[liked_most[,1]!="NaN",]
+head(liked_most[order(liked_most[,1], decreasing = TRUE),], n = 5)
+
+proc.time() -ptm
 
 ```
 

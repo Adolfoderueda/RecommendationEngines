@@ -13,7 +13,6 @@ Import libraries
 
 ```{r}
 
-library(data.table)
 library(reshape)
 library(tidyr)
 
@@ -36,14 +35,16 @@ Calculate mean rating for each movie, ordered with the highest rating listed fir
 3.062500, 'The Silence of the Lambs'
 
 ```{r fig.width=7, fig.height=6}
-ptm = proc.time()
 
+#get the mean of each column into a matrix
 means_col = matrix(colMeans(critics[-1], na.rm = TRUE))
+#get the names of each column
 film_col = matrix(colnames(critics[-1]))
+#bind them into the same matrix
 ratings = cbind(means_col,film_col)
+#print top 5
 head(ratings[order(ratings[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
 ```
 
 # 2) Top 5 Movies, by rating distribution
@@ -57,20 +58,20 @@ Calculate the percentage of ratings for each movie that are 4 stars or higher. O
 0.4375000, 'The Silence of the Lambs'
 
 ```{r fig.width=7, fig.height=6}
-ptm = proc.time()
-
+#create two matrixes empty for the next for loop
 percentages = matrix(NA, ncol = 2, nrow = 20)
 value = matrix(NA, ncol = 2)
 
+#for loop to bind into a matrix two columns: first one sum the number of ratings >= 4 and divide them by the total and the name of the movie where you are carrying this operation
 for(i in 2:ncol(critics)){
   x = i-1
   value = cbind(c(sum(critics[[i]]>=4, na.rm = TRUE)/sum(critics[[i]]>0, na.rm = TRUE)),c( colnames(critics[i]))) 
   percentages[x,] = value
 }
-
+#print top 5
 head(percentages[order(percentages[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
+
 ```
 
 # 3) Top 5 Movies, by quantity of ratings
@@ -84,23 +85,23 @@ Count the number of ratings for each movie, order the one with most number of ra
 13, 'Independence Day'
 
 ```{r fig.width=7, fig.height=6}
-ptm = proc.time()
-
+#create two matrixes empty for the next for loop
 nratings = matrix(NA, ncol = 2, nrow = 20)
 value = matrix(NA, ncol = 2)
 
+#for loop to bind into a matrix two columns: first one sum the total number of ratings and the name of the movie where you are carrying this operation
 for(i in 2:ncol(critics)){
   x = i-1
   value = cbind(sum(critics[[i]]>=0, na.rm = TRUE),c(colnames(critics[i])))
   nratings[x,] = value
 }
 
+#In this case we need to make it data frame to modify the number of ratings column to make it number type data and the plot the top 5
 nratings = data.frame(nratings)
 nratings$X1 = as.numeric(as.character(nratings$X1))
 str(nratings)
 head(nratings[order(nratings[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
 ```
 
 # 4) People who watched Star Wars IV also watched ...
@@ -114,20 +115,20 @@ Top Occurences:
 0.6666667, 'Total Recall'
 
 ```{r fig.width=7, fig.height=6}
-ptm = proc.time()
-
+#create two matrixes empty for the next for loop
 preferences = matrix(NA, ncol = 2, nrow = 20)
 ratio = matrix(NA, ncol = 2)
 
+#for loop to bind into a matrix two columns: first one sum the number of ratings that "Star Wars IV: A New Hope" and the other movies coincided and the name of the movie where you are carrying this operation
 for(i in 3:nrow(critics)){
   x = i-1
   ratio = cbind(sum((is.na(critics[[i]])==FALSE) & (is.na(critics[[2]])==FALSE), na.rm = TRUE)/sum(((is.na(critics[[2]])==FALSE))), c(colnames(critics[i])))
   preferences[x,] = ratio
 }
 
+#print top 5
 head(preferences[order(preferences[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
 ```
 
 
@@ -142,22 +143,24 @@ Calculate the movies better rated of people who liked a movie. Select the people
 4.000, 'Blade.Runner'
 
 ```{r fig.width=7, fig.height=6}
-ptm = proc.time()
 
+#create two matrixes empty for the next for loop and a new dataset with only the rows where "Babe" ratings are 4 or higher
 liked_most = matrix(NA, ncol = 2, nrow = 20)
 ratio = matrix(NA, ncol = 2)
-#new_data = critics[critics[,21]>=4,]
-new_data = subset(critics, is.na(critics[[2]])==FALSE)
- 
+new_data = critics[critics[,21]>=4,]
+new_data = new_data[complete.cases(new_data[,21]),]
+
+# in this for loop we create a two column matrix: first column with the average rate for each movie and the second with the name of the movie
 for(i in 2:ncol(critics)-1){
   x = i-1
   ratio = cbind(mean(new_data[,i], na.rm = TRUE), colnames(new_data[i]))
   liked_most[x,] = ratio
 }
 
+# print the top 5
 head(liked_most[order(liked_most[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
+
 
 ```
 
@@ -177,14 +180,16 @@ ratings_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2n
 # Putting both databases together
 
 data_100k = merge(ratings_100k, movies_100k, by.x = 'movieId')
+
+#Erasing columns we dont need due to merge
 data_100k$movieId = NULL
 data_100k$genres = NULL
-
 data_100k$timestamp = NULL
 
+# We use spread function to give our data the same structure as in past exercises
 data_100k = data_100k[-86634,]#repeated rating --> user rates the movie twice
 data_100k = spread(data = data_100k, key = title, value = rating)
-head(data_100k)
+#head(data_100k) --> It takes a little bit of time
 
 
 ```
@@ -195,15 +200,13 @@ head(data_100k)
 Calculate mean rating for each movie, ordered with the highest rating listed first, and plot the top 5.
 
 ```{r}
-
-ptm = proc.time()
+# Same as Exercise 1
 
 means_col_100 = matrix(colMeans(data_100k[-1], na.rm = TRUE))
 film_col_100 = matrix(colnames(data_100k[-1]))
 ratings_100 = cbind(means_col_100,film_col_100)
 head(ratings_100[order(ratings_100[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
 
 ```
 
@@ -212,8 +215,7 @@ proc.time() -ptm
 Calculate the percentage of ratings for each movie that are 4 stars or higher. Order with the highest percentage first, and plot the top 5 movies with more high ratings distribution.
 
 ```{r}
-
-ptm = proc.time()
+# Same as exercise 2
 
 percentages = matrix(NA, ncol = 2, nrow = ncol(data_100k))
 value = matrix(NA, ncol = 2)
@@ -227,7 +229,6 @@ for(i in 2:ncol(data_100k)){
 
 head(percentages[order(percentages[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
 
 ```
 
@@ -235,8 +236,7 @@ proc.time() -ptm
 
 Count the number of ratings for each movie, order the one with most number of ratings first, submit the top 5.
 ```{r}
-
-ptm = proc.time()
+# Same as exercise 3
 
 nratings = matrix(NA, ncol = 2, nrow = ncol(data_100k))
 value = matrix(NA, ncol = 2)
@@ -247,14 +247,12 @@ for(i in 2:ncol(data_100k)){
   nratings[x,] = value
 }
 
-# I transform nratings to transform X1(number of views) to change its format
 nratings = data.frame(nratings)
 nratings$X1 = as.numeric(as.character(nratings$X1))
 nratings = as.matrix(nratings)
 
 head(nratings[order(nratings[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
 
 ```
 
@@ -265,7 +263,7 @@ We will select Bottle Rocket as default.
 
 ```{r}
 
-ptm = proc.time()
+#Same as in exercise 4
 
 preferences = matrix(NA, ncol = 2, nrow = nrow(data_100k))
 ratio = matrix(NA, ncol = 2)
@@ -278,9 +276,6 @@ for(i in 3:nrow(data_100k)){
 
 head(preferences[order(preferences[,1], decreasing = TRUE),], n = 5)
 
-proc.time() -ptm
-
-
 ```
 
 # Exercise 5
@@ -288,13 +283,13 @@ Calculate the movies better rated of people who liked a movie. Select the people
 
 ```{r}
 
-ptm = proc.time()
+#Same as in exercise 5
 
 liked_most = matrix(NA, ncol = 2, nrow = ncol(data_100k))
 ratio = matrix(NA, ncol = 2)
 new_data = data_100k[data_100k$`Forrest Gump (1994)`>=4,]
-#new_data = subset(data_100k, is.na(data_100k[[ncol(data_100k)]])==FALSE)
- 
+new_data = new_data[complete.cases(new_data$`Forrest Gump (1994)`),]
+
 for(i in 2:ncol(data_100k)){
   x = i-1
   ratio = cbind(mean(new_data[,i], na.rm = TRUE), colnames(new_data[i]))
@@ -303,8 +298,6 @@ for(i in 2:ncol(data_100k)){
 
 liked_most = liked_most[liked_most[,1]!="NaN",]
 head(liked_most[order(liked_most[,1], decreasing = TRUE),], n = 5)
-
-proc.time() -ptm
 
 ```
 

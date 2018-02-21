@@ -30,9 +30,9 @@ Calculate the Pearson correlation coefficient between Victoria and Nuria
 **Expected correlation between Victoria and Nuria**: 0.3651484
 
 ```{r fig.width=7, fig.height=6}
-
+# Get the correlation where user == "Victoria" and "Nuria". We make it numeric to do the pearson correlation function and using all the complete observations
 y = cor.test(x=matrix(as.numeric(critics[(critics$User=='Victoria'),-1])),y=matrix(as.numeric(critics[(critics$User=='Nuria'),-1])),method = "pearson", use = "pairwise.complete.obs")
-
+#Correlation estimate
 y$estimate
 
 ```
@@ -41,21 +41,45 @@ y$estimate
 Using the calculated Pearson correlation in the previous section. Compare and show the movie ratings for Victoria and Nuria on a scatter plot. How is this compared with the same ratings of Maria and Nerea on a scatter plot? What about Chris and Jim? What it means?
 
 ```{r}
-
+#We create function to create correlations just by putting the name of the user
 cor_for_critics = function(x,y){
   cor.test(as.numeric(critics[(critics$User==x),-1]),y=as.numeric(critics[(critics$User==y),-1]),method = "pearson", use = "pairwise.complete.obs")
 }
-
+#We get the different combinations correlations
 VN = cor_for_critics("Victoria", "Nuria")
 MN = cor_for_critics("Maria", "Nerea")
 CJ = cor_for_critics("Chris", "Jim")
 
-par(mfrow = c(3, 1))
-correlations = c(VN$estimate, MN$estimate, CJ$estimate)
-pairs(combn(x=correlations, m=2), pch=21, lower.panel = panel.smooth)
-combn(x=correlations, m=2)
-plot(combn(x=correlations, m=2))
-dev.off()
+#Plotting Victoria and Nuria
+ratings1 <- subset(critics, critics$User =="Victoria" | critics$User=="Nuria")
+ratings1=t(ratings1)
+ratings1 = ratings1[complete.cases(ratings1),]
+ratings1= as.data.frame(ratings1)
+colnames(ratings1)= c("Victoria","Nuria")
+ratings1=ratings1[-1,]
+plot.default(ratings1[,"Victoria"], ratings1[,"Nuria"], xlab = "Victoria's rating", ylab = "Nuria's rating", xlim = c(0,5), ylim = c(0,5))
+abline(mC1 <- lm(Nuria ~ Victoria, data = ratings1))
+
+#Plotting Maria and Nerea
+ratings2 <- subset(critics, critics$User =="Maria" | critics$User=="Nerea")
+ratings2=t(ratings2)
+ratings2 = ratings2[complete.cases(ratings2),]
+ratings2= as.data.frame(ratings2)
+colnames(ratings2)= c("Maria","Nerea")
+ratings2=ratings2[-1,]
+plot.default(ratings2[,"Maria"], ratings2[,"Nerea"], xlab = "Maria's rating", ylab = "Nerea's rating", xlim = c(0,5), ylim = c(0,5))
+abline(mC2 <- lm(Nerea ~ Maria , data = ratings2))
+
+#Plotting Chris and Jim
+ratings3 <- subset(critics, critics$User =="Chris" | critics$User=="Nerea")
+ratings3=t(ratings3)
+ratings3 = ratings3[complete.cases(ratings3),]
+ratings3= as.data.frame(ratings3)
+colnames(ratings3)= c("Chris","Jim")
+ratings3=ratings3[-1,]
+plot.default(ratings3[,"Chris"], ratings3[,"Jim"], xlab = "Chris's rating", ylab = "Jim's rating", xlim = c(0,5), ylim = c(0,5))
+abline(mC3 <- lm(Jim ~ Chris , data = ratings3))
+
 ```
 
 
@@ -71,25 +95,30 @@ Get the top 5 movies recommended for Victoria. by using a weighted average of ev
 
 ```{r fig.width=7, fig.height=6}
 
+# We create a new dataset called critics_modified with a new column called average
 critics_modified = critics
 critics_modified$average = NA
 
+# We insert in column average the mean value of the observations of each user
 for(i in 1:nrow(critics_modified)){
   critics_modified[i,ncol(critics_modified)] = mean(as.matrix(critics_modified[i,-1]), na.rm = TRUE)
 }
 
+# We create function that gives you the correlation of "Victoria" with other users that you will input into the function
 cor_for_critics_victoria = function(y){
   cor.test(as.numeric(critics[(critics$User=="Victoria"),-1]),y=as.numeric(critics[(critics$User==y),-1]),method = "pearson", use = "pairwise.complete.obs")
 }
 
+# Create column weights
 critics_modified$weights = NA
 
+# Doing a for loop and using the function before we insert the weights (or correlations) of each user into its corresponding row in the column weights
 for(i in 1:nrow(critics_modified)){
   cor_critics = cor_for_critics_victoria(as.character(critics[i,1]))
   critics_modified[i,ncol(critics_modified)] = cor_critics$estimate
 }
 
-
+# We modify each rating of each user by every user and make them the scaled ratings * weights. (Inside of the prediction mathematical function it's the numerator). We do this except for the row number 15 where "Victoria" is allocated
 for(i in 1:(nrow(critics_modified))){
   for(j in 2:(ncol(critics_modified)-2)){
     if(i != 15){
@@ -98,13 +127,15 @@ for(i in 1:(nrow(critics_modified))){
     }
 }
 
+# We isolate the average rating of "victoria" and erase its row
 average_victoria = critics_modified[15,22]
 critics_modified = critics_modified[-15,]
 
+# Create two matrixes that we will use in the next for loop
 z = matrix(NA, ncol = 2)
 prediction_victoria = matrix(NA, ncol = 2, nrow = (ncol(critics_modified)-3))
 
-
+# Here we are creating a matrix with two elements: the prediction and the movie to watch. To do this we apply the whole function suming the average rating of victoria plus the sum of all the numerator of all the users for the same movie (calculated previously) and dividing by the total absolute weight. This will be bind and appended into prediction_victoria
 for(i in 2:(ncol(critics_modified)-2)){
    if(is.na(critics[15,i])==TRUE){
      z=cbind(average_victoria+(sum(critics_modified[,i],na.rm = TRUE)/sum(abs(critics_modified$weights), na.rm = TRUE)), colnames(critics_modified[i]))
@@ -112,6 +143,8 @@ for(i in 2:(ncol(critics_modified)-2)){
      prediction_victoria[i-1,]=z
    }
 }
+
+# We visualize the first 5 predictions
 head(prediction_victoria[order(prediction_victoria[,1], decreasing = TRUE),], n= 5)
 
 ```

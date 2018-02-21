@@ -13,15 +13,12 @@ Import libraries
 
 ```{r}
 
-library(lattice)
-library(ggplot2)
-
 ```
 
 Load the critics dataset.
 
 ```{r}
-critics = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/critics.csv", sep = ",")
+critics = read.csv("critics.csv", sep = ",")
 ```
 
 # 1) Pearson correlation coefficient 
@@ -139,7 +136,6 @@ prediction_victoria = matrix(NA, ncol = 2, nrow = (ncol(critics_modified)-3))
 for(i in 2:(ncol(critics_modified)-2)){
    if(is.na(critics[15,i])==TRUE){
      z=cbind(average_victoria+(sum(critics_modified[,i],na.rm = TRUE)/sum(abs(critics_modified$weights), na.rm = TRUE)), colnames(critics_modified[i]))
-     print(z)
      prediction_victoria[i-1,]=z
    }
 }
@@ -148,14 +144,6 @@ for(i in 2:(ncol(critics_modified)-2)){
 head(prediction_victoria[order(prediction_victoria[,1], decreasing = TRUE),], n= 5)
 
 ```
-
-**Expected result**:
-3.7917013044215, 'The Matrix'
-3.50776533175371, 'Forrest Gump'     
-3.33118834864677, 'The Sixth Sense' 
-3.11491825315719, 'Shakespeare in Love'
-2.9124513228665, 'Blade Runner'
-
 
 # 4) Top similar critics
 Return the top 5 critics that are most similar to Victoria. 
@@ -168,10 +156,11 @@ Return the top 5 critics that are most similar to Victoria.
 0.4273247, 'Carles'
 
 ```{r fig.width=7, fig.height=6}
-
+# create two matrixes for the loop afterwards
 similar_victoria = matrix(NA, ncol = 2, nrow = nrow(critics))
 z=matrix(NA, ncol = 2, nrow = 1)
 
+# we will get a matrix with two columns: first one we get the correlation of every user with victoria with the function said before and the second one are the names of the users.
 for(i in 1:nrow(critics)){
   if(i!=15){
     cor_critics = cor_for_critics_victoria(as.character(critics[i,1]))
@@ -179,7 +168,7 @@ for(i in 1:nrow(critics)){
     similar_victoria[i,] = z
   }
 }
-
+# we print the top 5
 head(similar_victoria[order(similar_victoria[,1],decreasing = TRUE),], n=5)
 
 

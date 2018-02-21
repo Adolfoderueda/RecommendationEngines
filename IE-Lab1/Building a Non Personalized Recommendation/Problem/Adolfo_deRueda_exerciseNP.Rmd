@@ -21,7 +21,7 @@ library(tidyr)
 Load the critics dataset.
 
 ```{r}
-critics = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/critics.csv", sep = ",")
+critics = read.csv("critics.csv", sep = ",")
 ```
 
 # 1) Top 5 Movies, by rating mean
@@ -173,9 +173,9 @@ Explore a real data set and provide non-personalized ratings. You can use the Mo
 
 # Loading the data
 
-movies_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/ml-latest-small/movies.csv", sep = ",")
+movies_100k = read.csv("movies.csv", sep = ",")
 
-ratings_100k = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/ml-latest-small/ratings.csv", sep = ",")
+ratings_100k = read.csv("ratings.csv", sep = ",")
 
 # Putting both databases together
 

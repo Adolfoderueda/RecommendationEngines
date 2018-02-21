@@ -13,13 +13,15 @@ Import libraries
 
 ```{r}
 
+library(lattice)
+library(ggplot2)
 
 ```
 
 Load the critics dataset.
 
 ```{r}
-critics = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/IE-Lab1/Data/critics.csv", sep = ",")
+critics = read.csv("C:/Users/adolf/OneDrive/Documents/IE Business School/2nd Semester/Recommendation Engines/Labs/Data/critics.csv", sep = ",")
 ```
 
 # 1) Pearson correlation coefficient 
@@ -29,10 +31,33 @@ Calculate the Pearson correlation coefficient between Victoria and Nuria
 
 ```{r fig.width=7, fig.height=6}
 
+y = cor.test(x=matrix(as.numeric(critics[(critics$User=='Victoria'),-1])),y=matrix(as.numeric(critics[(critics$User=='Nuria'),-1])),method = "pearson", use = "pairwise.complete.obs")
+
+y$estimate
+
 ```
 
 # 2) Compare two movie critics
 Using the calculated Pearson correlation in the previous section. Compare and show the movie ratings for Victoria and Nuria on a scatter plot. How is this compared with the same ratings of Maria and Nerea on a scatter plot? What about Chris and Jim? What it means?
+
+```{r}
+
+cor_for_critics = function(x,y){
+  cor.test(matrix(as.numeric(critics[(critics$User==x),-1])),y=matrix(as.numeric(critics[(critics$User==y),-1])),method = "pearson", use = "pairwise.complete.obs")
+}
+
+VN = cor_for_critics("Victoria", "Nuria")
+MN = cor_for_critics("Maria", "Nerea")
+CJ = cor_for_critics("Chris", "Jim")
+
+par(mfrow = c(3, 1))
+correlations = c(VN$estimate, MN$estimate, CJ$estimate)
+plotmatrix(combn(x=correlations, m=2), pch=21)
+combn(x=correlations, m=2)
+plot(combn(x=correlations, m=2))
+dev.off()
+```
+
 
 # 3) Top Recommendations 
 Get the top 5 movies recommended for Victoria. by using a weighted average of every other critic's rankings.
@@ -45,6 +70,8 @@ Get the top 5 movies recommended for Victoria. by using a weighted average of ev
 2.9124513228665, 'Blade Runner'
 
 ```{r fig.width=7, fig.height=6}
+
+
 
 ```
 

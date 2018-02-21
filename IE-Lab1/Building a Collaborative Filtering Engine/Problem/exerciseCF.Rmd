@@ -43,7 +43,7 @@ Using the calculated Pearson correlation in the previous section. Compare and sh
 ```{r}
 
 cor_for_critics = function(x,y){
-  cor.test(matrix(as.numeric(critics[(critics$User==x),-1])),y=matrix(as.numeric(critics[(critics$User==y),-1])),method = "pearson", use = "pairwise.complete.obs")
+  cor.test(as.numeric(critics[(critics$User==x),-1]),y=as.numeric(critics[(critics$User==y),-1]),method = "pearson", use = "pairwise.complete.obs")
 }
 
 VN = cor_for_critics("Victoria", "Nuria")
@@ -52,7 +52,7 @@ CJ = cor_for_critics("Chris", "Jim")
 
 par(mfrow = c(3, 1))
 correlations = c(VN$estimate, MN$estimate, CJ$estimate)
-plotmatrix(combn(x=correlations, m=2), pch=21)
+pairs(combn(x=correlations, m=2), pch=21, lower.panel = panel.smooth)
 combn(x=correlations, m=2)
 plot(combn(x=correlations, m=2))
 dev.off()
@@ -71,9 +71,58 @@ Get the top 5 movies recommended for Victoria. by using a weighted average of ev
 
 ```{r fig.width=7, fig.height=6}
 
+critics_modified = critics
+critics_modified$average = NA
 
+for(i in 1:nrow(critics_modified)){
+  critics_modified[i,ncol(critics_modified)] = mean(as.matrix(critics_modified[i,-1]), na.rm = TRUE)
+}
+
+cor_for_critics_victoria = function(y){
+  cor.test(as.numeric(critics[(critics$User=="Victoria"),-1]),y=as.numeric(critics[(critics$User==y),-1]),method = "pearson", use = "pairwise.complete.obs")
+}
+
+critics_modified$weights = NA
+
+for(i in 1:nrow(critics_modified)){
+  cor_critics = cor_for_critics_victoria(as.character(critics[i,1]))
+  critics_modified[i,ncol(critics_modified)] = cor_critics$estimate
+}
+
+
+for(i in 1:(nrow(critics_modified))){
+  for(j in 2:(ncol(critics_modified)-2)){
+    if(i != 15){
+      critics_modified[i,j] = (critics_modified[i,j]-critics_modified[i,ncol(critics_modified)-1])*critics_modified[i,ncol(critics_modified)]
+    }
+    }
+}
+
+average_victoria = critics_modified[15,22]
+critics_modified = critics_modified[-15,]
+
+z = matrix(NA, ncol = 2)
+prediction_victoria = matrix(NA, ncol = 2, nrow = (ncol(critics_modified)-3))
+
+
+for(i in 2:(ncol(critics_modified)-2)){
+   if(is.na(critics[15,i])==TRUE){
+     z=cbind(average_victoria+(sum(critics_modified[,i],na.rm = TRUE)/sum(abs(critics_modified$weights), na.rm = TRUE)), colnames(critics_modified[i]))
+     print(z)
+     prediction_victoria[i-1,]=z
+   }
+}
+head(prediction_victoria[order(prediction_victoria[,1], decreasing = TRUE),], n= 5)
 
 ```
+
+**Expected result**:
+3.7917013044215, 'The Matrix'
+3.50776533175371, 'Forrest Gump'     
+3.33118834864677, 'The Sixth Sense' 
+3.11491825315719, 'Shakespeare in Love'
+2.9124513228665, 'Blade Runner'
+
 
 # 4) Top similar critics
 Return the top 5 critics that are most similar to Victoria. 
@@ -86,4 +135,19 @@ Return the top 5 critics that are most similar to Victoria.
 0.4273247, 'Carles'
 
 ```{r fig.width=7, fig.height=6}
+
+similar_victoria = matrix(NA, ncol = 2, nrow = nrow(critics))
+z=matrix(NA, ncol = 2, nrow = 1)
+
+for(i in 1:nrow(critics)){
+  if(i!=15){
+    cor_critics = cor_for_critics_victoria(as.character(critics[i,1]))
+    z=cbind(cor_critics$estimate, as.character(critics[i,1]))
+    similar_victoria[i,] = z
+  }
+}
+
+head(similar_victoria[order(similar_victoria[,1],decreasing = TRUE),], n=5)
+
+
 ```
